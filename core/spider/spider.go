@@ -123,7 +123,6 @@ func (this *Spider) Run() {
 	this.mc = resource_manage.NewResourceManageChan(this.threadnum)
 
 	//init db  by sorawa
-
 	for {
 		req := this.pScheduler.Poll()
 
