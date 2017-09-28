@@ -36,9 +36,11 @@ func (this *MyPageProcesser) Process(p *page.Page) {
 
 	query := p.GetHtmlParser()
 	var urls []string
-	query.Find("h3[class='repo-list-name'] a").Each(func(i int, s *goquery.Selection) {
+	//query.Find("div.d-inline-block.mb-1 h3 a").Each(func(i int, s *goquery.Selection) {
+	query.Find("div#user-repositories-list ul li div h3 a").Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("href")
 		urls = append(urls, "http://github.com/"+href)
+		fmt.Printf("URL:%s\n", href)
 	})
 	// these urls will be saved and crawed by other coroutines.
 	p.AddTargetRequests(urls, "html")

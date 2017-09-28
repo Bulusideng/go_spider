@@ -41,13 +41,13 @@ func (this *HttpDownloader) Download(req *request.Request) *page.Page {
 	mtype = req.GetResponceType()
 	switch mtype {
 	case "html":
-		return this.downloadHtml(p, req)
+		return this.downloadHtml(p)
 	case "json":
 		fallthrough
 	case "jsonp":
-		return this.downloadJson(p, req)
+		return this.downloadJson(p)
 	case "text":
-		return this.downloadText(p, req)
+		return this.downloadText(p)
 	default:
 		mlog.LogInst().LogError("error request type:" + mtype)
 	}
@@ -212,17 +212,17 @@ func (this *HttpDownloader) changeCharsetEncodingAutoGzipSupport(contentTypeStr 
 }
 
 // choose http GET/method to download
-func connectByHttp(p *page.Page, req *request.Request) (*http.Response, error) {
+func connectByHttp(p *page.Page) (*http.Response, error) {
 	client := &http.Client{
-		CheckRedirect: req.GetRedirectFunc(),
+		CheckRedirect: p.GetRedirectFunc(),
 	}
 
-	httpreq, err := http.NewRequest(req.GetMethod(), req.GetUrl(), strings.NewReader(req.GetPostdata()))
-	if header := req.GetHeader(); header != nil {
-		httpreq.Header = req.GetHeader()
+	httpreq, err := http.NewRequest(p.GetMethod(), p.GetUrl(), strings.NewReader(p.GetPostdata()))
+	if header := p.GetHeader(); header != nil {
+		httpreq.Header = p.GetHeader()
 	}
 
-	if cookies := req.GetCookies(); cookies != nil {
+	if cookies := p.GetCookies(); cookies != nil {
 		for i := range cookies {
 			httpreq.AddCookie(cookies[i])
 		}
@@ -244,9 +244,9 @@ func connectByHttp(p *page.Page, req *request.Request) (*http.Response, error) {
 }
 
 // choose a proxy server to excute http GET/method to download
-func connectByHttpProxy(p *page.Page, in_req *request.Request) (*http.Response, error) {
-	request, _ := http.NewRequest("GET", in_req.GetUrl(), nil)
-	proxy, err := url.Parse(in_req.GetProxyHost())
+func connectByHttpProxy(p *page.Page) (*http.Response, error) {
+	request, _ := http.NewRequest("GET", p.GetUrl(), nil)
+	proxy, err := url.Parse(p.GetProxyHost())
 	if err != nil {
 		return nil, err
 	}
@@ -264,10 +264,10 @@ func connectByHttpProxy(p *page.Page, in_req *request.Request) (*http.Response, 
 }
 
 // Download file and change the charset of page charset.
-func (this *HttpDownloader) downloadFile(p *page.Page, req *request.Request) (*page.Page, string) {
+func (this *HttpDownloader) downloadFile(p *page.Page) (*page.Page, string) {
 	var err error
 	var urlstr string
-	if urlstr = req.GetUrl(); len(urlstr) == 0 {
+	if urlstr = p.GetUrl(); len(urlstr) == 0 {
 		mlog.LogInst().LogError("url is empty")
 		p.SetStatus(true, "url is empty")
 		return p, ""
@@ -275,14 +275,14 @@ func (this *HttpDownloader) downloadFile(p *page.Page, req *request.Request) (*p
 
 	var resp *http.Response
 
-	if proxystr := req.GetProxyHost(); len(proxystr) != 0 {
+	if proxystr := p.GetProxyHost(); len(proxystr) != 0 {
 		//using http proxy
 		//fmt.Print("HttpProxy Enter ",proxystr,"\n")
-		resp, err = connectByHttpProxy(p, req)
+		resp, err = connectByHttpProxy(p)
 	} else {
 		//normal http download
 		//fmt.Print("Http Normal Enter \n",proxystr,"\n")
-		resp, err = connectByHttp(p, req)
+		resp, err = connectByHttp(p)
 	}
 
 	if err != nil {
@@ -307,9 +307,9 @@ func (this *HttpDownloader) downloadFile(p *page.Page, req *request.Request) (*p
 	return p, bodyStr
 }
 
-func (this *HttpDownloader) downloadHtml(p *page.Page, req *request.Request) *page.Page {
+func (this *HttpDownloader) downloadHtml(p *page.Page) *page.Page {
 	var err error
-	p, destbody := this.downloadFile(p, req)
+	p, destbody := this.downloadFile(p)
 	//fmt.Printf("Destbody %v \r\n", destbody)
 	if !p.IsSucc() {
 		//fmt.Print("Page error \r\n")
@@ -336,16 +336,16 @@ func (this *HttpDownloader) downloadHtml(p *page.Page, req *request.Request) *pa
 	return p
 }
 
-func (this *HttpDownloader) downloadJson(p *page.Page, req *request.Request) *page.Page {
+func (this *HttpDownloader) downloadJson(p *page.Page) *page.Page {
 	var err error
-	p, destbody := this.downloadFile(p, req)
+	p, destbody := this.downloadFile(p)
 	if !p.IsSucc() {
 		return p
 	}
 
 	var body []byte
 	body = []byte(destbody)
-	mtype := req.GetResponceType()
+	mtype := p.GetResponceType()
 	if mtype == "jsonp" {
 		tmpstr := util.JsonpToJson(destbody)
 		body = []byte(tmpstr)
@@ -364,8 +364,8 @@ func (this *HttpDownloader) downloadJson(p *page.Page, req *request.Request) *pa
 	return p
 }
 
-func (this *HttpDownloader) downloadText(p *page.Page, req *request.Request) *page.Page {
-	p, destbody := this.downloadFile(p, req)
+func (this *HttpDownloader) downloadText(p *page.Page) *page.Page {
+	p, destbody := this.downloadFile(p)
 	if !p.IsSucc() {
 		return p
 	}

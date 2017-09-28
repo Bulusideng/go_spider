@@ -14,24 +14,15 @@ import (
 	//"fmt"
 )
 
-// Page represents an entity be crawled.
-type Page struct {
-	// The isfail is true when crawl process is failed and errormsg is the fail resean.
-	isfail   bool
-	errormsg string
-
-	// The request is crawled by spider that contains url and relevent information.
-	req *request.Request
-
+type Response struct {
 	// The body is plain text of crawl result.
 	body string
 
 	header  http.Header
 	cookies []*http.Cookie
+}
 
-	// The docParser is a pointer of goquery boject that contains html result.
-	docParser *goquery.Document
-
+type Parsed struct {
 	// The jsonMap is the json result.
 	jsonMap *simplejson.Json
 
@@ -43,9 +34,29 @@ type Page struct {
 	targetRequests []*request.Request
 }
 
+// Page represents an entity be crawled.
+type Page struct {
+	// The isfail is true when crawl process is failed and errormsg is the fail resean.
+	isfail   bool
+	errormsg string
+
+	// The request is crawled by spider that contains url and relevent information.
+	*request.Request
+	Response
+	Parsed
+
+	// The docParser is a pointer of goquery boject that contains html result.
+	docParser *goquery.Document
+}
+
 // NewPage returns initialized Page object.
 func NewPage(req *request.Request) *Page {
-	return &Page{pItems: page_items.NewPageItems(req), req: req}
+	return &Page{
+		Parsed: Parsed{
+			pItems: page_items.NewPageItems(req),
+		},
+		Request: req,
+	}
 }
 
 // SetHeader save the header of http responce
@@ -105,20 +116,9 @@ func (this *Page) GetSkip() bool {
 	return this.pItems.GetSkip()
 }
 
-// SetRequest saves request oject of this page.
-func (this *Page) SetRequest(r *request.Request) *Page {
-	this.req = r
-	return this
-}
-
-// GetRequest returns request oject of this page.
-func (this *Page) GetRequest() *request.Request {
-	return this.req
-}
-
 // GetUrlTag returns name of url.
 func (this *Page) GetUrlTag() string {
-	return this.req.GetUrlTag()
+	return this.GetUrlTag()
 }
 
 // AddTargetRequest adds one new Request waitting for crawl.
